@@ -8,8 +8,13 @@ import threading
 
 # 取得伺服器 ip 及 port,
 # "" 預設為 localhost
-host = "".join(sys.argv[1:])
+try: host = sys.argv[1]
+except: host = "localhost"
+
 port = 9999
+buffer_size = 32768 #8192
+loss = -1
+# file_descriptor_data = open("tmp.txt", "wb")
 
 # KB， MB, 和 GB 的位元組個數。
 kb = 1024
@@ -17,8 +22,6 @@ mb = 1048576     # 1024 x 1024
 gb = 1073741824  # 1024 x 1024 x 1024
 
 
-f = open("tmp.txt", "wb")
-loss = -1
 
 
 def get_suitable_unit(speed) -> (float, str):
@@ -99,12 +102,18 @@ while True:
         '''
         說明： 開始接受伺服器傳送的資料，如果失敗就回報錯誤，並結束程式。
         '''
-        temp = client.recv(8192)
+        temp = client.recv(buffer_size)
         
     except socket.error  as msg:
         print('Receiving error, Error code : ' + str(msg.errno) + ' Message ' + msg.strerror)
         time_counter.cancel()
         sys.exit(1)
+    except KeyboardInterrupt:
+        time_counter.cancel()
+        client.close()
+        time_end = time.time() # 取得傳送結束的時間
+        print("\nClient closed")
+        break
         
     if len(temp) == 0:
         '''
@@ -123,14 +132,14 @@ while True:
             speed, suitable_unit = get_suitable_unit(time_counter.total_size // (time_end - time_start))
             sys.stdout.write('\rcurrent speed: %.2f %-5s' % (speed, suitable_unit))
 
-        f.close()
+        # file_descriptor_data.close()
         print('\nDowload complete!')
         break
 
-    f.write(temp)
+    # file_descriptor_data.write(temp)
     time_counter.total_size += len(temp) # 更新目前下載的檔案大小。
 
 print("\n--- %s:%s socket static ---"% (host, port))
-speed, suitable_unit = get_suitable_unit(time_counter.total_size // (time_end - time_start))
+avg_speed, avg_unit = get_suitable_unit(time_counter.total_size // (time_end - time_start))
 total, total_unit = get_suitable_unit(time_counter.total_size)
-print("%d %s trasmitted, %d loss, time %.4fs, avg time %.2f %s/s"% (total, total_unit, loss, time_end - time_start, speed, suitable_unit))
+print("%d %s trasmitted, %d loss, time %.4fs, avg time %.2f %s/s"% (total, total_unit, loss, time_end - time_start, avg_speed, avg_unit))
