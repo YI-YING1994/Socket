@@ -3,7 +3,7 @@
 
 import sys
 import socket
-import multiprocessing
+import threading
 
 """
 說明： 客戶端 ip 及 port，
@@ -53,7 +53,6 @@ print("Socket now listening!")
 connect: 用來與客戶端傳送資料的 socket 物件。
 addr: 客戶端的 ip 及 port。
 """
-current_connet = []
 def ReceiveData(connect):
     try:
         file_descriptor_data = open(file_name, "rb")
@@ -83,12 +82,9 @@ while True:
         connect, addr = server.accept()
         print("\nConnected socket with " + addr[0] + ":" + str(addr[1]))
 
-        p = multiprocessing.Process(target=ReceiveData,args=(connect,),)
+        p = threading.Thread(target=ReceiveData, args=(connect,))
         p.start()
-        current_connet.append(p)
     except KeyboardInterrupt:
-        for p in current_connet:
-            p.terminate()
         print("Server closed")
         break
 server.close()   

@@ -2,6 +2,9 @@ big*.txt
 small*.txt
 tmp.txt
 test.py
+result/
+Wire/
+Wireless/
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
